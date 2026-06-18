@@ -1,5 +1,5 @@
 server:
-  port: ${SERVER_PORT:8084}
+  port: ${SERVER_PORT:8087}
 
 reed-api:
   base-url: ${REED_API_BASE_URL:https://www.reed.co.uk/api/1.0}
