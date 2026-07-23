@@ -1,5 +1,27 @@
+spring:
+  application:
+    name: reed-gateway
+
 server:
   port: ${SERVER_PORT:8087}
+
+external-provider:
+  mode: ${EXTERNAL_PROVIDER_MODE:LIVE}
+
+fixture:
+  system-data-service-url: ${SYSTEM_DATA_SERVICE_URL:http://localhost:8103}
+  dataset-id: ${FIXTURE_DATASET_ID:uk-software-developer-demo}
+  dataset-version: ${FIXTURE_DATASET_VERSION:1.0.0}
+  scenario: ${FIXTURE_SCENARIO:happy-path}
+  latency:
+    enabled: ${FIXTURE_LATENCY_ENABLED:false}
+    job-search-ms: ${FIXTURE_JOB_SEARCH_LATENCY_MS:0}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
 
 reed-api:
   base-url: ${REED_API_BASE_URL:https://www.reed.co.uk/api/1.0}
@@ -14,3 +36,9 @@ job-search:
   default-page-size: 20
   max-page-size: 100
   max-distance: 100
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{correlationId}] [%X{serviceName}] [%thread] %logger{36} - %msg%n"
+  level:
+    com.jobseekercopilot: ${APP_LOG_LEVEL:INFO}
