@@ -5,13 +5,15 @@ provider mapping behind the Job Seeker Copilot provider contract. Fixture mode
 uses synthetic System Data responses.
 
 Status: **migration candidate; not beta-ready**. It retains useful legacy and
-root-subtree history as archive tags, but the active source cannot build
-without an excluded local System Data client JAR. See
+root-subtree history as archive tags. The System Data client is now generated
+from a pinned producer contract; the remaining findings are recorded in
 [`docs/BETA_READINESS_AUDIT.md`](docs/BETA_READINESS_AUDIT.md).
 
 ## Local verification
 
 ```bash
+./scripts/test-contract-policy.sh
+./scripts/verify-contracts.sh
 mvn -B clean verify
 docker build -t local/reed-gateway .
 ```
