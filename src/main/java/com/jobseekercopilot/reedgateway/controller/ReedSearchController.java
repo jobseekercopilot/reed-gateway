@@ -41,8 +41,7 @@ public class ReedSearchController {
     @Operation(summary = "Search Reed for the job service", description = "Internal gateway contract used by job-service.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Search completed successfully"),
-            @ApiResponse(responseCode = "401", description = "Missing X-User-Id header"),
-            @ApiResponse(responseCode = "422", description = "Search completed with no matching jobs")
+            @ApiResponse(responseCode = "401", description = "Missing X-User-Id header")
     })
     public ResponseEntity<ExternalSearchResponse> externalSearch(
             @RequestHeader(name = "X-User-Id", required = false) String userId,
@@ -64,7 +63,7 @@ public class ReedSearchController {
         ExternalSearchResponse response = emptyResponse(request);
         response.setJobs(jobs);
         response.setTotalResults(reedResponse.getTotalResults());
-        return jobs.isEmpty() ? ResponseEntity.unprocessableEntity().body(response) : ResponseEntity.ok(response);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/reed/search")
