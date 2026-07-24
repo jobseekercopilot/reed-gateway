@@ -8,9 +8,6 @@
 - **P0 provider compliance:** the official developer documentation does not
   establish the required storage, cache, redistribution and attribution rights.
   Written account-specific terms are required.
-- **P1 correctness:** the gateway returns HTTP 422 when Reed returns zero
-  matches, even though the provider documents an empty result set. Job Service
-  therefore reports a healthy empty provider as unavailable.
 - **P1 surface:** the legacy GET search endpoint is an unnecessary internal
   provider surface and has weaker validation.
 - **P1 resilience:** retries exist for selected transient failures, but the
@@ -28,6 +25,10 @@
   producer revision/checksum recorded in source. Contract negative tests,
   clean Maven verification and a source-only container build pass without
   `libs`, `systemPath` or skipped tests.
+- **Resolved REED-03 gateway semantics:** contract version 1.1 returns a
+  healthy zero-result search as `200` with an empty collection and truthful
+  page/page-size/total metadata. Controller tests keep missing identity,
+  invalid requests and upstream failures distinct.
 
 ## Provider evidence
 
@@ -40,7 +41,7 @@ alone is insufficient evidence of redistribution/storage permission.
 
 Clean-clone build/container evidence; versioned contract and drift checks;
 credential rotation/full-history decision; written provider permission;
-empty/pagination/error/mapping tests; bounded timeouts and retry budgets; and
+remaining pagination/error/mapping matrices; bounded timeouts and retry budgets; and
 redacted structured-log verification.
 
 This audit is not a beta-readiness approval.
