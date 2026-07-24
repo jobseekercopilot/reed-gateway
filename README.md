@@ -9,6 +9,10 @@ root-subtree history as archive tags. The System Data client is now generated
 from a pinned producer contract; the remaining findings are recorded in
 [`docs/BETA_READINESS_AUDIT.md`](docs/BETA_READINESS_AUDIT.md).
 
+Its provider-specific ownership and the boundary with canonical Job Service
+results are defined in the Infrastructure
+[Job Search architecture ADR](https://github.com/jobseekercopilot/infrastructure/blob/develop/docs/adr/0001-job-search-architecture-and-ownership.md).
+
 ## Local verification
 
 ```bash
