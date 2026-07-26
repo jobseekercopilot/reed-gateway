@@ -32,13 +32,20 @@ public class ReedApiClient implements ReedProviderClient {
 
     public ReedApiClient(ReedApiProperties properties) {
         this.properties = properties;
-        String auth = properties.getKey() + ":";
-        String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
-
-        this.webClient = WebClient.builder()
+        WebClient.Builder builder = WebClient.builder()
                 .baseUrl(properties.getBaseUrl())
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "Basic " + encodedAuth)
-                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                .defaultHeader(
+                        HttpHeaders.ACCEPT,
+                        MediaType.APPLICATION_JSON_VALUE);
+        if (!blank(properties.getKey())) {
+            String auth = properties.getKey() + ":";
+            String encodedAuth = Base64.getEncoder().encodeToString(
+                    auth.getBytes(StandardCharsets.UTF_8));
+            builder.defaultHeader(
+                    HttpHeaders.AUTHORIZATION,
+                    "Basic " + encodedAuth);
+        }
+        this.webClient = builder
                 .filter((request, next) -> {
                     String correlationId = MDC.get(CorrelationIdFilter.MDC_KEY);
                     if (StringUtils.hasText(correlationId)) {
@@ -54,6 +61,14 @@ public class ReedApiClient implements ReedProviderClient {
     @Override
     public ReedSearchResponse search(String keywords, String location, Integer distance, List<String> employmentTypes,
                                      Integer salaryMin, Integer salaryMax, String currency, Integer page, Integer pageSize) {
+        if (!properties.isEnabled()) {
+            log.warn("Reed provider is disabled");
+            return empty();
+        }
+        if (blank(properties.getKey())) {
+            throw new ReedApiException(
+                    "Reed live provider credential is not configured");
+        }
         long startedAt = System.nanoTime();
         log.info("Reed provider request started hasKeywords={} location={} distance={} page={} pageSize={} employmentTypes={}",
                 keywords != null && !keywords.isBlank(),
@@ -116,16 +131,25 @@ public class ReedApiClient implements ReedProviderClient {
             log.warn("Reed provider failed status={} durationMs={} error={}",
                     ex.getStatusCode().value(),
                     (System.nanoTime() - startedAt) / 1_000_000,
-                    ex.getClass().getSimpleName(),
-                    ex);
+                    ex.getClass().getSimpleName());
             throw new ReedApiException("Reed API error: " + ex.getStatusCode(), ex);
         } catch (Exception ex) {
             log.warn("Reed provider failed durationMs={} error={}",
                     (System.nanoTime() - startedAt) / 1_000_000,
-                    ex.getClass().getSimpleName(),
-                    ex);
-            throw new ReedApiException("Failed to call Reed API: " + ex.getMessage(), ex);
+                    ex.getClass().getSimpleName());
+            throw new ReedApiException("Reed API request failed", ex);
         }
+    }
+
+    private ReedSearchResponse empty() {
+        ReedSearchResponse response = new ReedSearchResponse();
+        response.setTotalResults(0);
+        response.setResults(List.of());
+        return response;
+    }
+
+    private boolean blank(String value) {
+        return value == null || value.isBlank();
     }
 
     private boolean isRetryable(Throwable error) {

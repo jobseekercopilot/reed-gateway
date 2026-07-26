@@ -2,9 +2,12 @@
 
 ## Blocking findings
 
-- **P0 credential response:** a non-empty Reed key default exists in current
-  source and legacy history. The current default is removed here; revoke/rotate
-  the key and make an explicit history-sanitisation decision before publishing.
+- **P0 credential response:** a non-empty Reed key default exists in unchanged
+  public legacy history. Candidate refs retain only the sanitised archive
+  mapping, default to credential-free fixture mode, fail closed in enabled live
+  mode without the injected key, and redact provider error representations.
+  The provider administrator must still revoke/rotate the exposed key and
+  retain restricted evidence before publication.
 - **P0 provider compliance:** the official developer documentation does not
   establish the required storage, cache, redistribution and attribution rights.
   Written account-specific terms are required.
@@ -29,6 +32,11 @@
   healthy zero-result search as `200` with an empty collection and truthful
   page/page-size/total metadata. Controller tests keep missing identity,
   invalid requests and upstream failures distinct.
+- **Resolved candidate credential controls:** deterministic tests prove
+  credential-free fixture operation, live startup/request failure without a
+  key, a no-call kill switch and Basic Authorization log redaction. The
+  repository-owned operations runbook and immutable public-to-sanitised ref map
+  record rotation and no-public-mutation boundaries.
 
 ## Provider evidence
 

@@ -6,7 +6,7 @@ server:
   port: ${SERVER_PORT:8087}
 
 external-provider:
-  mode: ${EXTERNAL_PROVIDER_MODE:LIVE}
+  mode: ${EXTERNAL_PROVIDER_MODE:FIXTURE}
 
 fixture:
   system-data-service-url: ${SYSTEM_DATA_SERVICE_URL:http://localhost:8103}
@@ -25,7 +25,8 @@ management:
 
 reed-api:
   base-url: ${REED_API_BASE_URL:https://www.reed.co.uk/api/1.0}
-  key: ${REED_API_KEY}
+  key: ${REED_API_KEY:}
+  enabled: ${REED_API_ENABLED:true}
   search-path: /search
   connect-timeout: ${REED_API_CONNECT_TIMEOUT:5000}
   read-timeout: ${REED_API_READ_TIMEOUT:10000}
@@ -42,3 +43,4 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{correlationId}] [%X{serviceName}] [%thread] %logger{36} - %msg%n"
   level:
     com.jobseekercopilot: ${APP_LOG_LEVEL:INFO}
+    org.springframework.web.reactive.function.client.ExchangeFunctions: WARN
