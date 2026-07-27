@@ -64,6 +64,11 @@ class ReedApiClientTest {
         assertThat(requestedUri.get().getRawQuery())
                 .contains("keywords=Platform%20Engineer")
                 .contains("locationName=London")
+                .contains("permanent=true")
+                .contains("resultsToSkip=0")
+                .doesNotContain("employmentType")
+                .doesNotContain("currency")
+                .doesNotContain("page=")
                 .doesNotContain("synthetic-key");
         assertThat(authorization).hasValue(expectedAuthorization);
     }
@@ -102,7 +107,7 @@ class ReedApiClientTest {
 
         assertThatThrownBy(() -> search(new ReedApiClient(properties)))
                 .isInstanceOf(ReedApiClient.ReedApiException.class)
-                .hasMessage("Reed API error: 400 BAD_REQUEST");
+                .hasMessage("Reed API request failed");
 
         assertThat(output)
                 .contains("status=400")
@@ -118,7 +123,7 @@ class ReedApiClientTest {
                 "Platform Engineer",
                 "London",
                 25,
-                List.of("permanent"),
+                List.of("PERMANENT"),
                 null,
                 null,
                 "GBP",

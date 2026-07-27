@@ -6,6 +6,7 @@ import com.jobseekercopilot.reedgateway.model.dto.ReedSearchResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -88,7 +89,21 @@ public class ReedApiClient implements ReedProviderClient {
                         }
                         if (employmentTypes != null && !employmentTypes.isEmpty()) {
                             for (String type : employmentTypes) {
-                                builder.queryParam("employmentType", type);
+                                switch (type.trim().toUpperCase(Locale.ROOT)) {
+                                    case "FULL_TIME" ->
+                                            builder.queryParam("fullTime", true);
+                                    case "PART_TIME" ->
+                                            builder.queryParam("partTime", true);
+                                    case "CONTRACT" ->
+                                            builder.queryParam("contract", true);
+                                    case "TEMPORARY", "TEMP" ->
+                                            builder.queryParam("temp", true);
+                                    case "PERMANENT" ->
+                                            builder.queryParam("permanent", true);
+                                    default -> {
+                                        // Unsupported values are not sent to Reed.
+                                    }
+                                }
                             }
                         }
                         if (salaryMin != null) {
@@ -97,11 +112,10 @@ public class ReedApiClient implements ReedProviderClient {
                         if (salaryMax != null) {
                             builder.queryParam("maximumSalary", salaryMax);
                         }
-                        if (currency != null) {
-                            builder.queryParam("currency", currency);
-                        }
-                        if (page != null) {
-                            builder.queryParam("page", page);
+                        if (page != null && pageSize != null) {
+                            builder.queryParam(
+                                    "resultsToSkip",
+                                    Math.max(0, page - 1) * pageSize);
                         }
                         if (pageSize != null) {
                             builder.queryParam("resultsToTake", pageSize);
@@ -126,18 +140,28 @@ public class ReedApiClient implements ReedProviderClient {
             log.warn("Reed provider rate limited status={} durationMs={}",
                     ex.getStatusCode().value(),
                     (System.nanoTime() - startedAt) / 1_000_000);
-            throw new ReedApiException("Rate limit exceeded", ex);
+            throw new ReedApiException(
+                    "Reed rate limit exceeded",
+                    HttpStatus.TOO_MANY_REQUESTS);
         } catch (WebClientResponseException ex) {
             log.warn("Reed provider failed status={} durationMs={} error={}",
                     ex.getStatusCode().value(),
                     (System.nanoTime() - startedAt) / 1_000_000,
                     ex.getClass().getSimpleName());
-            throw new ReedApiException("Reed API error: " + ex.getStatusCode(), ex);
+            HttpStatus status = ex.getStatusCode() == HttpStatus.UNAUTHORIZED
+                    || ex.getStatusCode() == HttpStatus.FORBIDDEN
+                    ? HttpStatus.valueOf(ex.getStatusCode().value())
+                    : HttpStatus.SERVICE_UNAVAILABLE;
+            throw new ReedApiException(
+                    "Reed API request failed",
+                    status);
         } catch (Exception ex) {
             log.warn("Reed provider failed durationMs={} error={}",
                     (System.nanoTime() - startedAt) / 1_000_000,
                     ex.getClass().getSimpleName());
-            throw new ReedApiException("Reed API request failed", ex);
+            throw new ReedApiException(
+                    "Reed API request failed",
+                    HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 
@@ -162,12 +186,19 @@ public class ReedApiClient implements ReedProviderClient {
     }
 
     public static class ReedApiException extends RuntimeException {
+        private final HttpStatus status;
+
         public ReedApiException(String message) {
-            super(message);
+            this(message, HttpStatus.SERVICE_UNAVAILABLE);
         }
 
-        public ReedApiException(String message, Throwable cause) {
-            super(message, cause);
+        public ReedApiException(String message, HttpStatus status) {
+            super(message, null, false, false);
+            this.status = status;
+        }
+
+        public HttpStatus getStatus() {
+            return status;
         }
     }
 }

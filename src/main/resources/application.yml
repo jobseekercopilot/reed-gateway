@@ -4,6 +4,10 @@ spring:
 
 server:
   port: ${SERVER_PORT:8087}
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
 
 external-provider:
   mode: ${EXTERNAL_PROVIDER_MODE:FIXTURE}
@@ -42,5 +46,9 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{correlationId}] [%X{serviceName}] [%thread] %logger{36} - %msg%n"
   level:
+    root: INFO
     com.jobseekercopilot: ${APP_LOG_LEVEL:INFO}
+    org.springframework.http.codec: WARN
     org.springframework.web.reactive.function.client.ExchangeFunctions: WARN
+    org.springframework.web: INFO
+    reactor.netty.http.client: WARN

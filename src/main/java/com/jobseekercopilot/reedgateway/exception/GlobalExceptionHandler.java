@@ -31,8 +31,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(ReedApiClient.ReedApiException.class)
     public ResponseEntity<Object> handleReedApiException(ReedApiClient.ReedApiException ex) {
-        ErrorResponse error = new ErrorResponse("SERVICE_UNAVAILABLE", "External job search service is temporarily unavailable");
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
+        String code = switch (ex.getStatus()) {
+            case TOO_MANY_REQUESTS -> "RATE_LIMITED";
+            case UNAUTHORIZED, FORBIDDEN -> "CONFIGURATION_ERROR";
+            default -> "SERVICE_UNAVAILABLE";
+        };
+        String message = switch (ex.getStatus()) {
+            case TOO_MANY_REQUESTS -> "Reed rate limit reached";
+            case UNAUTHORIZED, FORBIDDEN -> "Reed configuration rejected";
+            default -> "External job search service is temporarily unavailable";
+        };
+        ErrorResponse error = new ErrorResponse(code, message);
+        return ResponseEntity.status(ex.getStatus()).body(error);
     }
 
     @ExceptionHandler(Exception.class)
