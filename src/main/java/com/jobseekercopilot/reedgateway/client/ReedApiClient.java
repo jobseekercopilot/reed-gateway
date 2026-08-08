@@ -3,6 +3,7 @@ package com.jobseekercopilot.reedgateway.client;
 import com.jobseekercopilot.reedgateway.config.ReedApiProperties;
 import com.jobseekercopilot.reedgateway.logging.CorrelationIdFilter;
 import com.jobseekercopilot.reedgateway.model.dto.ReedSearchResponse;
+import com.jobseekercopilot.reedgateway.model.dto.ReedJobDto;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
@@ -159,6 +160,58 @@ public class ReedApiClient implements ReedProviderClient {
             log.warn("Reed provider failed durationMs={} error={}",
                     (System.nanoTime() - startedAt) / 1_000_000,
                     ex.getClass().getSimpleName());
+            throw new ReedApiException(
+                    "Reed API request failed",
+                    HttpStatus.SERVICE_UNAVAILABLE);
+        }
+    }
+
+    @Override
+    public ReedJobDto details(String jobId) {
+        if (!properties.isEnabled()) {
+            log.warn("Reed provider is disabled");
+            return null;
+        }
+        if (blank(properties.getKey())) {
+            throw new ReedApiException(
+                    "Reed live provider credential is not configured");
+        }
+        if (blank(jobId)) {
+            throw new ReedApiException("Reed job ID is required");
+        }
+        long startedAt = System.nanoTime();
+        log.info("Reed provider detail request started");
+        try {
+            ReedJobDto response = webClient.get()
+                    .uri(uriBuilder -> uriBuilder.path("/jobs/{jobId}")
+                            .build(jobId))
+                    .retrieve()
+                    .bodyToMono(ReedJobDto.class)
+                    .block();
+            log.info(
+                    "Reed provider detail returned status=200 hasDescription={} durationMs={}",
+                    response != null && !blank(response.getJobDescription()),
+                    (System.nanoTime() - startedAt) / 1_000_000);
+            return response;
+        } catch (WebClientResponseException exception) {
+            log.warn(
+                    "Reed provider detail failed status={} durationMs={} error={}",
+                    exception.getStatusCode().value(),
+                    (System.nanoTime() - startedAt) / 1_000_000,
+                    exception.getClass().getSimpleName());
+            if (exception.getStatusCode() == HttpStatus.NOT_FOUND) {
+                return null;
+            }
+            HttpStatus status = exception.getStatusCode()
+                    == HttpStatus.TOO_MANY_REQUESTS
+                    ? HttpStatus.TOO_MANY_REQUESTS
+                    : HttpStatus.SERVICE_UNAVAILABLE;
+            throw new ReedApiException("Reed API request failed", status);
+        } catch (RuntimeException exception) {
+            log.warn(
+                    "Reed provider detail failed durationMs={} error={}",
+                    (System.nanoTime() - startedAt) / 1_000_000,
+                    exception.getClass().getSimpleName());
             throw new ReedApiException(
                     "Reed API request failed",
                     HttpStatus.SERVICE_UNAVAILABLE);

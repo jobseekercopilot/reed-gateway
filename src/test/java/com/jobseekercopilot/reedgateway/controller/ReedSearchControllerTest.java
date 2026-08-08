@@ -2,6 +2,7 @@ package com.jobseekercopilot.reedgateway.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -89,6 +90,24 @@ class ReedSearchControllerTest {
     }
 
     @Test
+    void returnsCompleteProviderDetailsForGeneration() throws Exception {
+        ReedJobDto source = new ReedJobDto();
+        source.setJobId("reed-1");
+        source.setJobTitle("Developer");
+        source.setEmployerName("Example Ltd");
+        source.setJobDescription("Complete responsibilities and requirements.");
+        source.setJobUrl("https://jobs.example.test/reed-1");
+        provider.respondToDetailsWith(source);
+
+        mvc.perform(get("/api/jobs/reed-1")
+                        .header("X-User-Id", "user-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("reed-1"))
+                .andExpect(jsonPath("$.description")
+                        .value("Complete responsibilities and requirements."));
+    }
+
+    @Test
     void keepsMissingIdentityDistinctFromEmptySuccess()
             throws Exception {
         mvc.perform(post("/api/jobs/external-search")
@@ -151,6 +170,7 @@ class ReedSearchControllerTest {
             implements ReedProviderClient {
 
         private ReedSearchResponse response;
+        private ReedJobDto details;
         private RuntimeException failure;
 
         void respondWith(ReedSearchResponse providerResponse) {
@@ -159,6 +179,10 @@ class ReedSearchControllerTest {
 
         void failWith(RuntimeException providerFailure) {
             failure = providerFailure;
+        }
+
+        void respondToDetailsWith(ReedJobDto providerDetails) {
+            details = providerDetails;
         }
 
         @Override
@@ -176,6 +200,14 @@ class ReedSearchControllerTest {
                 throw failure;
             }
             return response;
+        }
+
+        @Override
+        public ReedJobDto details(String jobId) {
+            if (failure != null) {
+                throw failure;
+            }
+            return details;
         }
     }
 }
