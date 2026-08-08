@@ -51,6 +51,16 @@ public class FixtureReedProviderClient implements ReedProviderClient {
         return response;
     }
 
+    @Override
+    public ReedJobDto details(String jobId) {
+        delay();
+        DemoJob job = fixtureControllerApi.job(
+                jobId,
+                fixtureProperties.getDatasetId(),
+                fixtureProperties.getDatasetVersion());
+        return job == null ? null : toJob(job);
+    }
+
     private ReedJobDto toJob(DemoJob source) {
         ReedJobDto job = new ReedJobDto();
         job.setJobId(text(source.getExternalReference(), source.getId()));

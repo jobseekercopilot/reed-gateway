@@ -74,6 +74,17 @@ class ReedApiClientTest {
     }
 
     @Test
+    void fetchesOneJobThroughTheProviderDetailsEndpoint() {
+        var details = new ReedApiClient(properties).details("reed-123");
+
+        assertThat(requestedUri.get().getPath()).isEqualTo("/jobs/reed-123");
+        assertThat(requestedUri.get().getRawQuery()).isNull();
+        assertThat(details).isNotNull();
+        assertThat(details.getJobDescription())
+                .isEqualTo("Complete provider job description");
+    }
+
+    @Test
     void rejectsMissingLiveCredentialWithoutMakingARequest() {
         properties.setKey("");
 
@@ -135,8 +146,13 @@ class ReedApiClientTest {
         requestedUri.set(exchange.getRequestURI());
         authorization.set(
                 exchange.getRequestHeaders().getFirst("Authorization"));
-        byte[] body = "{\"totalResults\":0,\"results\":[]}"
-                .getBytes(StandardCharsets.UTF_8);
+        String responseBody = exchange.getRequestURI().getPath()
+                .startsWith("/jobs/")
+                ? "{\"jobId\":\"reed-123\",\"jobTitle\":"
+                        + "\"Platform Engineer\",\"jobDescription\":"
+                        + "\"Complete provider job description\"}"
+                : "{\"totalResults\":0,\"results\":[]}";
+        byte[] body = responseBody.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set(
                 "Content-Type", "application/json");
         exchange.sendResponseHeaders(responseStatus.get(), body.length);

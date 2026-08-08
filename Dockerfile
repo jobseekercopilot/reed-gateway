@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY pom.xml .
 COPY src ./src
+COPY docs ./docs
 
 RUN mvn -B --no-transfer-progress clean verify
 
