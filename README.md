@@ -1,5 +1,13 @@
 # Reed Gateway
 
+## Role in Job Seeker Copilot
+
+| Role | Called by | Calls | Data | Local port |
+|---|---|---|---|---:|
+| Reed provider search/detail boundary | Job Service | Reed API in live mode or System Data fixtures | None | 8087 |
+
+See the central [job-search journey](https://docs.jobseekercopilot.com/journeys/job-search/), [provider integrations](https://docs.jobseekercopilot.com/services/provider-integrations/), and [configuration reference](https://docs.jobseekercopilot.com/operations/configuration/).
+
 Reed Gateway isolates Reed API authentication, pagination parameters, and
 provider mapping behind the Job Seeker Copilot provider contract. Fixture mode
 uses synthetic System Data responses.
