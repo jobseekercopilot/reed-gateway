@@ -12,7 +12,9 @@ Reed Gateway isolates Reed API authentication, pagination parameters, and
 provider mapping behind the Job Seeker Copilot provider contract. Fixture mode
 uses synthetic System Data responses.
 
-Status: **migration candidate; not beta-ready**. It retains the selected useful
+Status: **implemented and composed for controlled private-beta use**. Fixture
+mode is the deterministic default and the live path has been exercised in a
+bounded manual validation; this is not provider reliability evidence. It retains the selected useful
 legacy history as a sanitised archive tag and records the excluded public ref
 explicitly. The System Data client is now generated from a pinned producer
 contract. Contract version 1.1 treats a healthy
