@@ -1,187 +1,54 @@
 # Reed Gateway
 
-A Spring Boot microservice that provides a gateway to the Reed.co.uk job search API, enabling seamless integration with external job search services.
+## Role in Job Seeker Copilot
 
-## Features
+| Role | Called by | Calls | Data | Local port |
+|---|---|---|---|---:|
+| Reed provider search/detail boundary | Job Service | Reed API in live mode or System Data fixtures | None | 8087 |
 
-- **Job Search Integration**: Connect to Reed.co.uk API for job listings
-- **RESTful API**: Expose standardized endpoints for job search operations
-- **External API Abstraction**: Transform Reed API responses into application-specific DTOs
-- **Error Handling**: Comprehensive exception handling with structured error responses
-- **Configuration Management**: Externalized configuration using Spring Boot properties
-- **Actuator Endpoints**: Health checks and monitoring capabilities
+See the central [job-search journey](https://docs.jobseekercopilot.com/journeys/job-search/), [provider integrations](https://docs.jobseekercopilot.com/services/provider-integrations/), and [configuration reference](https://docs.jobseekercopilot.com/operations/configuration/).
 
-## Tech Stack
+Reed Gateway isolates Reed API authentication, pagination parameters, and
+provider mapping behind the Job Seeker Copilot provider contract. Fixture mode
+uses synthetic System Data responses.
 
-- **Java 17**
-- **Spring Boot 3.2.0**
-- **Spring Web** - REST API framework
-- **Spring WebFlux** - Reactive programming support
-- **Spring Validation** - Request validation
-- **Spring Actuator** - Monitoring and health checks
-- **Lombok** - Boilerplate reduction
-- **Maven** - Build and dependency management
+Status: **implemented and composed for controlled private-beta use**. Fixture
+mode is the deterministic default and the live path has been exercised in a
+bounded manual validation; this is not provider reliability evidence. It retains the selected useful
+legacy history as a sanitised archive tag and records the excluded public ref
+explicitly. The System Data client is now generated from a pinned producer
+contract. Contract version 1.1 treats a healthy
+zero-result search as `200` with an empty `jobs` collection and truthful
+pagination metadata; invalid, unauthenticated and upstream-failure responses
+remain distinct. The remaining findings are recorded in
+[`docs/BETA_READINESS_AUDIT.md`](docs/BETA_READINESS_AUDIT.md).
 
-## Prerequisites
+Its provider-specific ownership and the boundary with canonical Job Service
+results are defined in the Infrastructure
+[Job Search architecture ADR](https://github.com/jobseekercopilot/infrastructure/blob/develop/docs/adr/0001-job-search-architecture-and-ownership.md).
 
-- Java 17 or higher
-- Maven 3.6+
-- Reed.co.uk API key
-
-## Project Structure
-
-```
-reed-gateway/
-├── src/main/java/com/jobseekercopilot/reedgateway/
-│   ├── ReedGatewayApplication.java          # Application entry point
-│   ├── client/
-│   │   └── ReedApiClient.java               # Reed API client implementation
-│   ├── config/
-│   │   ├── ReedApiProperties.java           # Configuration properties
-│   │   └── RestTemplateConfig.java          # HTTP client configuration
-│   ├── controller/
-│   │   └── ReedSearchController.java        # REST API endpoints
-│   ├── exception/
-│   │   └── GlobalExceptionHandler.java      # Exception handling
-│   └── model/dto/
-│       ├── ExternalJob.java                 # External job representation
-│       ├── ExternalSalary.java              # Salary information
-│       ├── ExternalSearchRequest.java       # Search request DTO
-│       ├── ExternalSearchResponse.java      # Search response DTO
-│       ├── ReedJobDto.java                  # Reed-specific job DTO
-│       ├── ReedSearchResponse.java          # Reed search response
-│       └── ErrorResponse.java               # Error response structure
-└── src/main/resources/
-    └── application.yml                       # Application configuration
-```
-
-## Configuration
-
-The application requires the following configuration in `application.yml`:
-
-```yaml
-reed:
-  api:
-    key: ${REED_API_KEY}           # Your Reed.co.uk API key
-    base-url: https://api.reed.co.uk
-```
-
-### Environment Variables
-
-- `REED_API_KEY` - Your Reed.co.uk API authentication key
-
-## Building the Application
+## Local verification
 
 ```bash
-mvn clean install
+./scripts/test-contract-policy.sh
+./scripts/verify-contracts.sh
+mvn -B clean verify
+docker build -t local/reed-gateway .
 ```
 
-## Running the Application
+The controller regression suite uses only a deterministic provider stub. It verifies
+populated and empty success responses, request validation, missing caller
+identity, upstream failure translation and salary parsing without a live Reed
+call.
 
-```bash
-mvn spring-boot:run
-```
+The safe default is `EXTERNAL_PROVIDER_MODE=FIXTURE`, which requires no live
+credential and is restricted to non-production use. Enabled `LIVE` mode
+requires `REED_API_KEY` before startup succeeds; it has no non-empty repository
+default. `REED_API_ENABLED=false` is the provider kill switch. Rotation,
+restricted evidence, renewal and incident procedures are defined in
+[`docs/CREDENTIAL_OPERATIONS.md`](docs/CREDENTIAL_OPERATIONS.md). The explicit
+public-to-sanitised ref decision and no-public-mutation boundary are recorded
+in [`docs/HISTORY_SANITISATION.md`](docs/HISTORY_SANITISATION.md).
 
-The application will start on the default port (typically 8080).
-
-## API Endpoints
-
-### Search Jobs
-
-```
-GET /api/reed/search
-```
-
-Search for jobs using the Reed.co.uk API.
-
-**Query Parameters:**
-- `keywords` - Job title or keywords
-- `location` - Location (city, region, or postcode)
-- `distance` - Search radius in miles (default: 10)
-- `minimumSalary` - Minimum salary filter
-- `maximumSalary` - Maximum salary filter
-- `jobType` - Type of employment (permanent, contract, etc.)
-- `page` - Page number for pagination
-
-**Example Request:**
-```bash
-curl "http://localhost:8080/api/reed/search?keywords=software+engineer&location=London"
-```
-
-## Architecture
-
-The application follows a layered architecture:
-
-1. **Controller Layer**: Handles HTTP requests and responses
-2. **Client Layer**: Communicates with external Reed API
-3. **Model/DTO Layer**: Data transfer objects for request/response mapping
-4. **Configuration Layer**: Externalized configuration management
-5. **Exception Handling**: Centralized error handling
-
-## Error Handling
-
-The application provides structured error responses:
-
-```json
-{
-  "timestamp": "2024-01-15T10:30:00",
-  "status": 400,
-  "error": "Bad Request",
-  "message": "Validation failed",
-  "path": "/api/reed/search"
-}
-```
-
-## Monitoring
-
-Spring Actuator endpoints are available for monitoring:
-
-- `/actuator/health` - Application health status
-- `/actuator/info` - Application information
-- `/actuator/metrics` - Application metrics
-
-## Development
-
-### Running Tests
-
-```bash
-mvn test
-```
-
-### Building JAR
-
-```bash
-mvn clean package
-```
-
-The executable JAR will be created in the `target/` directory.
-
-## Dependencies
-
-Key dependencies are managed through Maven:
-
-- Spring Boot Starter Web (REST API)
-- Spring Boot Starter WebFlux (Reactive support)
-- Spring Boot Starter Validation (Request validation)
-- Spring Boot Starter Actuator (Monitoring)
-- Lombok (Code generation)
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## License
-
-This project is part of the Job Seeker Copilot ecosystem.
-
-## Related Projects
-
-- [Job Seeker Copilot](https://github.com/mcgeeverbernard1992/job-seeker-copilot) - Main application
-
-## Support
-
-For issues and feature requests, please use the GitHub issue tracker.
+`develop` is the integration/default branch for beta hardening. See
+`CONTRIBUTING.md`, `SECURITY.md`, and `LICENSE`.
